@@ -1,6 +1,6 @@
 # 🌱 GreenThumb
 
-GreenThumb is a modern frontend project built with **React & TypeScript**, designed for a seamless user experience with efficient state management, routing, and styling. This project leverages cutting-edge web technologies to ensure high performance and scalability.
+GreenThumb is a modern frontend project built with **React & TypeScript**, designed for a seamless user experience with efficient state management, routing, and styling. This project leverages cutting-edge web technologies to ensure high performance and scalability. [Live Demo](https://sabzlife.netlify.app/)
 <img src="sabzlife.png" alt="sabzlife preview" width="100%">
 ## 🚀 Features
 
