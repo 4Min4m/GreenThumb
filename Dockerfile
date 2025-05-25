@@ -12,7 +12,7 @@ CMD ["npm", "run", "dev", "--", "--host", "0.0.0.0"]
 
 # Build stage
 FROM base AS build
-RUN npm ci --only=production && npm cache clean --force
+RUN npm ci && npm cache clean --force
 COPY . .
 RUN npm run build
 
