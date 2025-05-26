@@ -1,0 +1,17 @@
+apiVersion: v2
+name: greenthumb
+description: A Helm chart for GreenThumb React application
+type: application
+version: 0.1.0
+appVersion: "1.0.0"
+keywords:
+  - react
+  - frontend
+  - plants
+  - ecommerce
+home: https://github.com/4Min4m/GreenThumb
+sources:
+  - https://github.com/4Min4m/GreenThumb
+maintainers:
+  - name: GreenThumb Team
+    email: team@greenthumb.com
