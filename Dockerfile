@@ -16,25 +16,27 @@ RUN npm ci && npm cache clean --force
 COPY . .
 RUN npm run build
 
-# Production stage
+# Production stage - Using nginx with proper user setup
 FROM nginx:alpine AS production
+
+# Remove default nginx config
+RUN rm /etc/nginx/conf.d/default.conf
+
+# Copy built app
 COPY --from=build /app/dist /usr/share/nginx/html
 
-# Add custom nginx config for React Router
+# Copy custom nginx config
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 
-# Create non-root user for security
-RUN addgroup -g 1001 -S nodejs && \
-    adduser -S nextjs -u 1001
+# Create nginx user directories with proper permissions
+RUN mkdir -p /var/cache/nginx/client_temp && \
+    mkdir -p /tmp/nginx && \
+    chown -R nginx:nginx /var/cache/nginx && \
+    chown -R nginx:nginx /tmp/nginx && \
+    chown -R nginx:nginx /usr/share/nginx/html
 
-# Set proper permissions
-RUN chown -R nextjs:nodejs /usr/share/nginx/html && \
-    chown -R nextjs:nodejs /var/cache/nginx && \
-    chown -R nextjs:nodejs /var/log/nginx && \
-    chown -R nextjs:nodejs /etc/nginx/conf.d
-
-# Switch to non-root user
-USER nextjs
+# Run as nginx user (already exists in nginx:alpine)
+USER nginx
 
 EXPOSE 80
 CMD ["nginx", "-g", "daemon off;"]
