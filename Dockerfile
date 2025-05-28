@@ -16,17 +16,36 @@ RUN npm ci && npm cache clean --force
 COPY . .
 RUN npm run build
 
-# Production stage - Simple approach that works
+# Production stage - Proper non-root setup
 FROM nginx:alpine AS production
+
+# Create app user
+RUN addgroup -g 1001 -S appgroup && \
+    adduser -S appuser -u 1001 -G appgroup
+
+# Create necessary directories with proper ownership
+RUN mkdir -p /var/cache/nginx && \
+    mkdir -p /var/log/nginx && \
+    mkdir -p /var/run/nginx && \
+    mkdir -p /tmp/nginx && \
+    chown -R appuser:appgroup /var/cache/nginx && \
+    chown -R appuser:appgroup /var/log/nginx && \
+    chown -R appuser:appgroup /var/run && \
+    chown -R appuser:appgroup /tmp/nginx && \
+    chown -R appuser:appgroup /usr/share/nginx/html && \
+    chown -R appuser:appgroup /etc/nginx/conf.d
 
 # Copy built app
 COPY --from=build /app/dist /usr/share/nginx/html
 
-# Copy custom nginx config
-COPY nginx.conf /etc/nginx/conf.d/default.conf
+# Copy custom nginx config that uses non-root paths
+COPY nginx-nonroot.conf /etc/nginx/conf.d/default.conf
 
-# Don't change user - let nginx run as root in container
-# This is acceptable for demo purposes and avoids permission issues
+# Set ownership after copying
+RUN chown -R appuser:appgroup /usr/share/nginx/html && \
+    chown -R appuser:appgroup /etc/nginx/conf.d
 
-EXPOSE 80
+USER appuser
+
+EXPOSE 8080
 CMD ["nginx", "-g", "daemon off;"]
