@@ -16,11 +16,8 @@ RUN npm ci && npm cache clean --force
 COPY . .
 RUN npm run build
 
-# Production stage - Using nginx with proper user setup
+# Production stage - Simple approach that works
 FROM nginx:alpine AS production
-
-# Remove default nginx config
-RUN rm /etc/nginx/conf.d/default.conf
 
 # Copy built app
 COPY --from=build /app/dist /usr/share/nginx/html
@@ -28,15 +25,8 @@ COPY --from=build /app/dist /usr/share/nginx/html
 # Copy custom nginx config
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 
-# Create nginx user directories with proper permissions
-RUN mkdir -p /var/cache/nginx/client_temp && \
-    mkdir -p /tmp/nginx && \
-    chown -R nginx:nginx /var/cache/nginx && \
-    chown -R nginx:nginx /tmp/nginx && \
-    chown -R nginx:nginx /usr/share/nginx/html
-
-# Run as nginx user (already exists in nginx:alpine)
-USER nginx
+# Don't change user - let nginx run as root in container
+# This is acceptable for demo purposes and avoids permission issues
 
 EXPOSE 80
 CMD ["nginx", "-g", "daemon off;"]
