@@ -74,7 +74,7 @@ kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/
 helm upgrade --install greenthumb ./helm/greenthumb \
   --namespace greenthumb \
   --create-namespace \
-  --set image.repository=ghcr.io/4min4m/greenthumb \
+  --set image.repository=docker.io/amin4m/greenthumb \
   --set image.tag=latest \
   --set ingress.hosts[0].host=greenthumb.local
 
