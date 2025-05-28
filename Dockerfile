@@ -39,7 +39,7 @@ RUN mkdir -p /var/cache/nginx && \
 COPY --from=build /app/dist /usr/share/nginx/html
 
 # Copy custom nginx config that uses non-root paths
-COPY nginx-nonroot.conf /etc/nginx/conf.d/default.conf
+COPY nginx.conf /etc/nginx/conf.d/default.conf
 
 # Set ownership after copying
 RUN chown -R appuser:appgroup /usr/share/nginx/html && \
