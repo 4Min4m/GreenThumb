@@ -1,16 +1,86 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { Link } from 'react-router-dom';
 import { Minus, Plus, Trash2 } from 'lucide-react';
 import { RootState } from '../store';
 import { incrementQuantity, decrementQuantity, removeFromCart } from '../store/cartSlice';
+import { paymentService } from '../services/paymentService';
 
 export default function Cart() {
   const dispatch = useDispatch();
   const cartItems = useSelector((state: RootState) => state.cart.items);
+  const [isProcessing, setIsProcessing] = useState(false);
   
   const totalItems = cartItems.reduce((sum, item) => sum + item.quantity, 0);
   const totalCost = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+
+  // Function to handle checkout and process payment directly
+  const handleCheckout = async () => {
+    setIsProcessing(true);
+    
+    try {
+      // Process payment using the payment service
+      const result = await paymentService.processPayment(cartItems, totalCost);
+      
+      if (result.success) {
+        // Redirect to success page with transaction details
+        const successParams = new URLSearchParams({
+          orderId: result.data.order_id || `ORDER_${Date.now()}`,
+          amount: totalCost.toFixed(2),
+          transactionId: result.data.iso8583_message.systemTraceNumber || 'N/A',
+          status: result.data.status
+        });
+        window.location.href = `/order-success?${successParams.toString()}`;
+      } else {
+        // Redirect to cancelled/failed page
+        const cancelParams = new URLSearchParams({
+          orderId: result.data.order_id || `ORDER_${Date.now()}`,
+          reason: result.message || 'Transaction declined'
+        });
+        window.location.href = `/order-cancelled?${cancelParams.toString()}`;
+      }
+    } catch (error) {
+      console.error('Payment processing error:', error);
+      // Redirect to error page
+      const cancelParams = new URLSearchParams({
+        orderId: `ORDER_${Date.now()}`,
+        reason: error instanceof Error ? error.message : 'Payment processing failed'
+      });
+      window.location.href = `/order-cancelled?${cancelParams.toString()}`;
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  // Alternative method using form submission (uncomment if needed)
+  const createPaymentForm = (orderData: any) => {
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = 'http://localhost:3001/payment'; // Your payment gateway URL
+    
+    // Add form fields
+    const fields = {
+      amount: orderData.totalAmount.toFixed(2),
+      currency: orderData.currency,
+      orderId: orderData.orderId,
+      merchantId: orderData.merchantId,
+      returnUrl: orderData.returnUrl,
+      cancelUrl: orderData.cancelUrl,
+      description: `GreenThumb Plants - ${orderData.totalItems} items`,
+      items: JSON.stringify(orderData.items) // Send cart items as JSON
+    };
+
+    Object.entries(fields).forEach(([key, value]) => {
+      const input = document.createElement('input');
+      input.type = 'hidden';
+      input.name = key;
+      input.value = value;
+      form.appendChild(input);
+    });
+
+    document.body.appendChild(form);
+    form.submit();
+  };
 
   if (cartItems.length === 0) {
     return (
@@ -95,10 +165,15 @@ export default function Cart() {
               </div>
               
               <button 
-                className="w-full bg-green-600 text-white py-3 rounded-lg font-semibold mb-3 hover:bg-green-700"
-                onClick={() => alert('Checkout coming soon!')}
+                className={`w-full py-3 rounded-lg font-semibold mb-3 transition-colors ${
+                  isProcessing 
+                    ? 'bg-gray-400 cursor-not-allowed' 
+                    : 'bg-green-600 hover:bg-green-700'
+                } text-white`}
+                onClick={handleCheckout}
+                disabled={isProcessing}
               >
-                Proceed to Checkout
+                {isProcessing ? 'Processing Payment...' : 'Proceed to Checkout'}
               </button>
               
               <Link 
